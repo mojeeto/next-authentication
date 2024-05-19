@@ -31,7 +31,7 @@ export async function createAuthSession(userId: string) {
 
 export const verifyAuth = cache(async function verifyAuth() {
   const sessionCookie = cookies().get(lucia.sessionCookieName);
-  if (!sessionCookie || sessionCookie.value) {
+  if (!sessionCookie || !sessionCookie.value) {
     return {
       user: null,
       session: null,
@@ -56,6 +56,7 @@ export const verifyAuth = cache(async function verifyAuth() {
         sessionCookie.attributes,
       );
     }
-    return result;
   } catch {}
+
+  return result;
 });
