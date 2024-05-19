@@ -1,6 +1,6 @@
 "use server";
 
-import { createAuthSession } from "@/lib/auth";
+import { createAuthSession, destroySession } from "@/lib/auth";
 import { UserType } from "@/lib/db";
 import { hashUserPassword, verifyPassword } from "@/lib/hash";
 import { createUser, getUserByEmail } from "@/lib/user";
@@ -74,12 +74,12 @@ export async function login(
     };
   // check user password
   const verifiedPassword = verifyPassword(user.password, password);
-  if (!verifyPassword)
+  if (!verifiedPassword)
     return {
       password: "Password is not correct!",
     };
   // create session
-  await createAuthSession(user.id);
+  await createAuthSession(user.id.toString());
   redirect("/training");
 }
 
@@ -92,4 +92,9 @@ export async function auth(
     return await login(prevState, formData);
   }
   return await signup(prevState, formData);
+}
+
+export async function logout() {
+  await destroySession();
+  return redirect("/");
 }

@@ -31,6 +31,7 @@ export async function createAuthSession(userId: string) {
 
 export const verifyAuth = cache(async function verifyAuth() {
   const sessionCookie = cookies().get(lucia.sessionCookieName);
+
   if (!sessionCookie || !sessionCookie.value) {
     return {
       user: null,
@@ -38,10 +39,12 @@ export const verifyAuth = cache(async function verifyAuth() {
     };
   }
 
+  const sessionId = sessionCookie.value;
+
   const result = await lucia.validateSession(sessionCookie.value);
   try {
     if (result.session && result.session.fresh) {
-      const sessionCookie = lucia.createSessionCookie(sessionCookie.value);
+      const sessionCookie = lucia.createSessionCookie(sessionId);
       cookies().set(
         sessionCookie.name,
         sessionCookie.value,
@@ -60,3 +63,20 @@ export const verifyAuth = cache(async function verifyAuth() {
 
   return result;
 });
+
+export async function destroySession() {
+  const { session } = await verifyAuth();
+  if (!session) {
+    return {
+      error: "Unauthorized",
+    };
+  }
+  await lucia.invalidateSession(session.id);
+
+  const sessionCookie = lucia.createBlankSessionCookie();
+  cookies().set(
+    sessionCookie.name,
+    sessionCookie.value,
+    sessionCookie.attributes,
+  );
+}
