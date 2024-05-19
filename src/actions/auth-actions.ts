@@ -1,8 +1,11 @@
 "use server";
 
 import { createAuthSession } from "@/lib/auth";
-import { hashUserPassword } from "@/lib/hash";
-import { createUser } from "@/lib/user";
+import { UserType } from "@/lib/db";
+import { hashUserPassword, verifyPassword } from "@/lib/hash";
+import { createUser, getUserByEmail } from "@/lib/user";
+import { sign } from "crypto";
+import { ClientPageRoot } from "next/dist/client/components/client-page";
 import { redirect } from "next/navigation";
 
 export async function signup(
@@ -40,4 +43,53 @@ export async function signup(
     }
     throw err;
   }
+}
+
+export async function login(
+  _state: { email?: string; password?: string },
+  formData: FormData,
+) {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+
+  let errors: { email?: string; password?: string } = {};
+
+  if (!email.includes("@")) {
+    errors.email = "Please enter a valid email.";
+  }
+
+  if (password.trim().length < 8) {
+    errors.password = "Password must at least 8 characters long.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return errors;
+  }
+
+  // check user is exists
+  const user = getUserByEmail(email);
+  if (!user)
+    return {
+      email: "Email is not exists!",
+    };
+  // check user password
+  const verifiedPassword = verifyPassword(user.password, password);
+  if (!verifyPassword)
+    return {
+      password: "Password is not correct!",
+    };
+  // create session
+  await createAuthSession(user.id);
+  redirect("/training");
+}
+
+export async function auth(
+  mode: "login" | "signup",
+  prevState: { email?: string; password?: string },
+  formData: FormData,
+) {
+  if (mode === "login") {
+    return await login(prevState, formData);
+  }
+  return await signup(prevState, formData);
 }
