@@ -4,7 +4,7 @@ import { signup } from "@/actions/auth-actions";
 import Link from "next/link";
 import { useFormState } from "react-dom";
 
-export default function AuthForm() {
+export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [state, serverAction] = useFormState(signup, {});
 
   return (
@@ -23,10 +23,16 @@ export default function AuthForm() {
         {state?.password && <p>{state.password}</p>}
       </p>
       <p>
-        <button type="submit">Create Account</button>
+        {mode === "login" && <button type="submit">Login</button>}
+        {mode === "signup" && <button type="submit">Create Account</button>}
       </p>
       <p>
-        <Link href="/">Login with existing account.</Link>
+        {mode === "login" && (
+          <Link href="/?mode=signup">Create new account.</Link>
+        )}
+        {mode === "signup" && (
+          <Link href="/?mode=login">Login with existing account.</Link>
+        )}
       </p>
     </form>
   );
